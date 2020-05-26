@@ -1,0 +1,212 @@
+**************************************************************
+*     MACRO and MODEL LIBRARY for symbol library AT          *
+*     (automation technology)                                *
+*                                                            *
+* Note: Models are mainly based on equivalent circuits       *
+*       and can, therefore, be used for simulations in       *
+*       AC and TRANS mode.                                   *
+*                                                            *
+**************************************************************
+* 2001 02 (B. Fischer)
+* 2015 05 (J. Schoenherr)
+************************************************************
+* Subsystem                                  Macro call    *
+*----------------------------------------------------------*
+* P element:       Parameter k               P             *
+* I element:       Parameter Ti              I             *
+* D element:       Parameter Td              D             *
+* PT1 element:     Parameter T1              PT1           *
+* IT1 element:     Parameter Ti, T1          IT1           *
+* DT1 element:     Parameter Td, T1          DT1           *
+* PI element:      Parameter k,  Ti          PI            *
+* PD element:      Parameter k,  Td          PD            *
+* PDT1 element:    Parameter Td, T1          PDT1          *
+* PT2 element:     Parameter T1, T2          PT2           *
+* PT2S element:    Parameter T1, T2          PT2S          *
+* PID element:     Parameter k,  Ti, Td      PID           *
+* dead time elem.: Parameter Tt              PTt           *
+* Limiter:         Parameter min, max        LIM           *
+************************************************************
+*--------------------------------------------------
+* P element
+.subckt P in out
++       params: k=1
+E1  out 0   VALUE {k*v(in)}
+.ends
+*--------------------------------------------------
+* I element
+.subckt I in out
++       params: Ti=1
+G1  0   1   VALUE {v(in)/Ti}
+C1  1   0   1 IC=0
+R1  1   0   1G
+E1  out 0   VALUE {v(1)}
+.ends
+*--------------------------------------------------
+* D element
+.subckt D in out
++       params: Td=1
+G1  0   1   VALUE {Td*v(in)}
+L1  1   0   1 IC=0
+R1  1   0   1G
+E1  out 0   VALUE {v(1)}
+.ends
+*--------------------------------------------------
+* PT1 element
+.subckt PT1 in out
++       params: T1=1
+G1  0   1   VALUE {(v(in)-v(1))/T1}
+C1  1   0   1  IC=0
+R1  1   0   1G
+E1  out 0   VALUE {v(1)}
+.ends
+*--------------------------------------------------
+* IT1 element
+.subckt IT1 in out
++       params: Ti=1
++               T1=1
+G1  0   1   VALUE {(v(in)-Ti*v(1))/(Ti*T1)}
+C1  1   0   1  IC=0
+R1  1   0   1G
+G2  0   2   VALUE {v(1)}
+C2  2   0   1  IC=0
+R2  2   0   1G
+E1  out 0   VALUE {v(2)}
+.ends
+*---------------------------------------------------
+* DT1 element
+.subckt DT1 in out
++       params: Td=1
++               T1=1
+G1  0   1   VALUE {Td*v(in)}
+L1  1   0   1  IC=0
+R1  1   0   1G
+G2  0   2   VALUE {(v(1)-v(2))/T1}
+C2  2   0   1  IC=0
+R2  2   0   1G
+E1  out 0   VALUE {v(2)}
+.ends
+*---------------------------------------------------
+* PI element
+.subckt PI in out
++       params: k=1
++               Ti=1
+G1  0   1   VALUE {v(in)/Ti}
+C1  1   0   1 IC=0
+R1  1   0   1G
+E1  out 0   VALUE {k*v(in)+v(1)}
+.ends
+*--------------------------------------------------
+* PD element
+.subckt PD in out
++       params: k=1
++               Td=1
+G1  0   1   VALUE {Td*v(in)}
+L1  1   0   1 IC=0
+*R1  1   0   1G
+E1  out 0   VALUE {k*v(in)+v(1)}
+.ends
+*--------------------------------------------------
+* PDT1 element
+.subckt PDT1 in out
++       params: Td=1
++               T1=1
+G1  0   1   VALUE {Td*v(in)}
+L1  1   0   1 IC=0
+R1  1   0   1G
+G2  0   2   VALUE {(v(in)-v(2)+v(1))/T1}
+C2  2   0   1  IC=0
+R2  2   0   1G
+E1  out 0   VALUE {v(2)}
+.ends
+*--------------------------------------------------
+* PT2 element
+.subckt PT2 in out
++       params: T1=1
+                T2=1
+G1  0   1   VALUE {(v(in)-(T1+T2)*v(1)-v(2))/(T1*T2)}
+C1  1   0   1  IC=0
+R1  1   0   1G
+G2  0   2   VALUE {v(1)}
+C2  2   0   1
+R2  2   0   1G
+E1  out 0   VALUE {v(2)}
+.ends
+*--------------------------------------------------
+* PT2S element
+.subckt PT2S in out
++       params: T1=1
++               T2=1
+G1  0   1   VALUE {(v(in)-v(2)-T1*v(1))/(T2*T2)}
+C1  1   0   1  IC=0
+R1  1   0   1G
+G2  0   2   VALUE {v(1)}
+C2  2   0   1
+R2  2   0   1G
+E1  out 0   VALUE {v(2)}
+.ends
+*--------------------------------------------------
+* PID element
+.subckt PID in out
++       params: k=1
++               Ti=1
++               Td=1
+G1  0   1   VALUE {v(in)/Ti}
+C1  1   0   1 IC=0
+R1  1   0   1G
+G2  0   2   VALUE {v(in)*Td}
+L2  2   0   1  IC=0
+E1  out 0   VALUE {k*v(in)+v(1)+v(2)}
+.ends
+*---------------------------------------------------
+* G element
+.subckt G_elem in out
++       params: num=1
++               den=1+s
+E1 out 0 LAPLACE {V(in)} {(num) /(den)}
+.ends
+*---------------------------------------------------
+* dead time element
+.subckt PTt in out
++       params: Tt=1s
+E1 out 0  LAPLACE {v(in)}={exp(-Tt*s)}
+.ends
+*---------------------------------------------------
+* Limiter
+.subckt LIM in out
++       params: min=-10   ; lower bound
++               max=10    ; upper bound
+E1 out 0  VALUE {LIMIT(v(in),{ug},{og})}
+.ends
+*---------------------------------------------------
+* step_gen
+.subckt step_gen out
++       params: s=1
++               td=1s
++               tr=1us
+V1 out 0  AC=1 PULSE 0 {s} {td} {tr}  0 10000 100000
+.ends
+*---------------------------------------------------
+* impulse_gen
+.subckt impulse_gen out
++       params: st=1
++               td=1s
+V1 out 0  AC=1 PULSE (0 {ST} {TD}  0  0  1n 1000)
+.ends
+*---------------------------------------------------
+* MS_sum
+.subckt MS_sum in1 in2 out
+E1 out 0 VALUE {V(in1)+V(in2)}
+.ends
+*---------------------------------------------------
+* MS_delta
+.subckt MS_delta in1 in2 out
+E1 out 0 VALUE {V(in2, in1)}
+.ends
+*---------------------------------------------------
+* MS_mult
+.subckt MS_mult in1 in2 out
+E1 out 0 VALUE {V(in1)*V(in2)}
+.ends
+*---------------------------------------------------
+*$

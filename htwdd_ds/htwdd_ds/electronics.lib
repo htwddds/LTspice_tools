@@ -1,0 +1,117 @@
+***********************************************************************
+*     MACRO and MODEL LIBRARY for symbol library electronics          *
+***********************************************************************
+* 2001 02 (B. Fischer)
+* 2015 05 (J. Schoenherr)
+* 2017 09 (R. Schumann)
+*=====================================================================
+.SUBCKT Dnorm 1 2
++       PARAMS: bv=1000  ; reverse breakdown voltage
++               rs=0     ; ohmic resistance
+D1 1 2 Dnorm 
+.model Dnorm D (bv={bv},rs={rs})
+.ENDS
+*=====================================================================
+.SUBCKT Qnorm_npn C B E
++       PARAMS: bf=100
+Q1 C B E Qnorm_npn  
+.model Qnorm_npn NPN (bf={bf})
+.ENDS
+*---------------------------------------------------------------------
+.SUBCKT Qnorm_pnp C B E
++       PARAMS: bf=100
+Q1 C B E Qnorm_pnp 
+.model Qnorm_pnp PNP (bf={bf})
+.ENDS
+*=====================================================================
+.SUBCKT Mnorm_n D G S B
++       PARAMS: W      =1um
++               L      =1um
++               Kp     =20u
++               Vto    =1V     ; threshold voltage
++               Lambda =.02    ; channel-length modulation
+M1 D G S B Mnorm_n (W={W}, L={L})
+.model Mnorm_n NMOS (Kp={Kp}, Vto={Vto}, Lambda={Lambda})
+.ENDS
+*---------------------------------------------------------------------
+.SUBCKT Mnorm_p D G S B
++       PARAMS: W      =1um
++               L      =1um
++               Kp     =20u
++               Vto    =-1V    ; threshold voltage
++               Lambda =.02    ; channel-length modulation
+M1 D G S B Mnorm_p (W={W}, L={L})
+.model Mnorm_p PMOS (Kp={Kp}, Vto={Vto}, Lambda={Lambda})
+.ENDS
+*=====================================================================
+.SUBCKT Jnorm_n D G S
++       PARAMS: Vto    =0      ; threshold voltage
++               Lambda =.02    ; channel-length modulation
+J1 D G S Jnorm_n
+.model Jnorm_n NJF (Vto={Vto}, Lambda={Lambda})
+.ENDS
+*---------------------------------------------------------------------
+.SUBCKT Jnorm_p D G S
++       PARAMS: Vto    =0      ; threshold voltage
++               Lambda =.02    ; channel-length modulation
+J1 D G S Jnorm_p
+.model Jnorm_p PJF (Vto={Vto}, Lambda={Lambda})
+.ENDS
+*=====================================================================
+* OPV
+* add ".options gfloat=0.0" to ensure proper functionality (LTspice)
+* i.e. prevent any additional resistor between floating nodes and ground.
+.subckt OPV0 p n out
+X1 p n out 0 nullor
+.ends
+*---------------------------------------------------------------------
+.subckt OPV1 in out
++       params: VO=1000  ; amplification
+E1 out 0 VALUE { VO*V(in) }
+.ends
+*---------------------------------------------------------------------
+.subckt OPV2 p n out
++       params: VO=1000  ; amplification
+E1 out 0 VALUE { VO*V(p, n) }
+R1 p n 1G
+.ends
+*---------------------------------------------------------------------
+.subckt OPV3 p n out
++       params: VO=1000  ; amplification
++               LB=-10   ; lower bound (voltage)
++               UB=10    ; upper bound (voltage)
+E1 out 0 VALUE { LIMIT(VO*V(p, n), LB, UB)}
+R1 p n 1G
+.ends
+*=====================================================================
+* potentiometer
+.subckt Poti 1 2 3
++       params: R=1k  ; between 1 and 2
++               x=0.5 ; ratio between 3 and 2
+R1 1 3 {(1-(x-1n))*R}
+R2 3 2 {(x+1n)*R}
+.ends
+*=====================================================================
+* variable capacity
+.subckt c_varianble 1 2
++       params: C=1n  ; between 1 and 2
++               x=0.5 ; ratio 
+C1 1 2 {(C*x)}
+.ends
+*=====================================================================
+* voltage source
+.subckt Vc out
++       params: VC=1V  ; voltage
+V1 out 0 {VC}
+.ends
+*=====================================================================
+* Nullor
+* add ".options gfloat=0.0" to ensure proper functionality (LTspice)
+* i.e. prevent any additional resistor between floating nodes and ground.
+.subckt nullor nul1 nul2 nor1 nor2
+V1 nul1 nul2 0
+F1 h 0 V1 1
+E1 nor1 nor2 h 0 1
+.ends
+*=====================================================================
+*$
